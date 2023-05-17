@@ -1,0 +1,4 @@
+.idea
+.env
+diff.output
+__pycache__/

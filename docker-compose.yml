@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_USER_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - '5431:5432'
+
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6378:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - cache:/data
+
+  app:
+    build: .
+    volumes:
+      - ./src:/autodp/src
+    ports:
+      - '80:80'
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data:
+  cache:
+    driver: local
