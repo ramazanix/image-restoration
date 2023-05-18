@@ -18,7 +18,7 @@ def init_app(init_db=True):
             if session_manager._engine is not None:
                 await session_manager.close()
 
-    server = FastAPI(title="AutoDP", lifespan=lifespan)
+    server = FastAPI(title="Photo Restoration", lifespan=lifespan)
 
     from .routers.auth import auth_router
     from .routers.user import users_router
