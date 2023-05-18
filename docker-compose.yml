@@ -24,7 +24,7 @@ services:
   app:
     build: .
     volumes:
-      - ./src:/autodp/src
+      - ./src:/photo-restoration/src
     ports:
       - '80:80'
     depends_on:
