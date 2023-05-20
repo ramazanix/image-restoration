@@ -8,9 +8,10 @@ from fastapi_jwt_auth import AuthJWT
 from ..services.user import get_with_paswd
 from ..dependencies import Auth, base_auth, auth_checker, auth_checker_refresh
 from ..redis import RedisClient
+from ..schemas.auth import LoginOut
 
 
-auth_router = APIRouter(prefix="/auth", tags=["Authenticate"])
+auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 redis_conn = RedisClient().conn
 
 
@@ -21,7 +22,7 @@ def check_if_token_in_denylist(decrypted_token: str) -> bool:
     return entry and entry == "true"
 
 
-@auth_router.post("/login")
+@auth_router.post("/login", response_model=LoginOut)
 async def login(
     user: UserSchemaCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -38,9 +39,7 @@ async def login(
     refresh_token = authorize.create_refresh_token(
         subject=user.username, user_claims=user_claims
     )
-    authorize.set_access_cookies(access_token)
-    authorize.set_refresh_cookies(refresh_token)
-    return {"success": "Successfully logged in"}
+    return {"access_token": access_token, "refresh_token": refresh_token}
 
 
 @auth_router.post("/refresh")
@@ -53,14 +52,13 @@ async def refresh_access_token(
     new_access_token = authorize.create_access_token(
         subject=current_user.username, user_claims=new_user_claims
     )
-    redis_conn.setex(authorize.jti, settings.AUTHJWT_COOKIE_MAX_AGE, "true")
-    authorize.set_access_cookies(new_access_token)
-    return {"success": "The token has been refreshed"}
+    redis_conn.setex(authorize.jti, settings.AUTHJWT_REFRESH_TOKEN_EXPIRES, "true")
+    return {"access_token": new_access_token}
 
 
 @auth_router.delete("/logout")
 async def logout(authorize: Annotated[Auth, Depends(auth_checker)]):
     jti = authorize.jti
-    redis_conn.setex(jti, settings.AUTHJWT_COOKIE_MAX_AGE, "true")
+    redis_conn.setex(jti, settings.AUTHJWT_ACCESS_TOKEN_EXPIRES, "true")
     authorize.unset_jwt_cookies()
-    return {"success": "Successfully logout"}
+    return {"detail": "Tokens has been revoked"}
