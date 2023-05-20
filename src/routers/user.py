@@ -7,6 +7,7 @@ from ..config import settings
 from ..db import get_db
 from ..dependencies import Auth, auth_checker
 from ..redis import RedisClient
+from .auth import oauth2_scheme
 
 
 users_router = APIRouter(prefix="/users", tags=["Users"])
@@ -17,13 +18,16 @@ redis_conn = RedisClient().conn
 async def get_current_user(
     db: Annotated[AsyncSession, Depends(get_db)],
     authorize: Annotated[Auth, Depends(auth_checker)],
+    z: Annotated[str, Depends(oauth2_scheme)],
 ):
     return await authorize.get_current_user(db)
 
 
 @users_router.post("", response_model=UserSchema, status_code=201)
 async def create_user(
-    user: UserSchemaCreate, db: Annotated[AsyncSession, Depends(get_db)]
+    user: UserSchemaCreate,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    z: Annotated[str, Depends(oauth2_scheme)],
 ):
     new_user = await create(db, user)
     if not new_user:
@@ -42,7 +46,11 @@ async def get_all_users(
 @users_router.get(
     "/{username}", response_model=UserSchema, dependencies=[Depends(auth_checker)]
 )
-async def get_user(username: str, db: Annotated[AsyncSession, Depends(get_db)]):
+async def get_user(
+    username: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    z: Annotated[str, Depends(oauth2_scheme)],
+):
     user = await get_by_username(db, username=username)
     if not user:
         raise HTTPException(status_code=400, detail="User not found")
@@ -55,6 +63,7 @@ async def update_user(
     payload: UserSchemaUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
     authorize: Annotated[Auth, Depends(auth_checker)],
+    z: Annotated[str, Depends(oauth2_scheme)],
 ):
     existed_user = await get_by_username(db, username=username)
 
@@ -77,6 +86,7 @@ async def delete_user(
     username: str,
     db: Annotated[AsyncSession, Depends(get_db)],
     authorize: Annotated[Auth, Depends(auth_checker)],
+    z: Annotated[str, Depends(oauth2_scheme)],
 ):
     existed_user = await get_by_username(db, username=username)
 
