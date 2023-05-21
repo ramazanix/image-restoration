@@ -26,8 +26,7 @@ async def get_current_user(
 @users_router.post("", response_model=UserSchema, status_code=201)
 async def create_user(
     user: UserSchemaCreate,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    z: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)]
 ):
     new_user = await create(db, user)
     if not new_user:
