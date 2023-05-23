@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     AUTHJWT_REFRESH_TOKEN_EXPIRES: int
     REDIS_HOST: str
     REDIS_PASSWORD: str
+    STATIC_PATH: str
 
     class Config:
         env_file = "./.env"
