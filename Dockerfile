@@ -5,11 +5,11 @@ COPY ./pyproject.toml ./poetry.lock* /tmp/
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 FROM python:3.10
-WORKDIR /photo-restoration
-COPY --from=requirements-stage /tmp/requirements.txt /photo-restoration/requirements.txt
-COPY .env /photo-restoration/.env
-RUN pip install --no-cache-dir --upgrade -r /photo-restoration/requirements.txt
-COPY ./src /photo-restoration/src
-COPY ./alembic.ini /photo-restoration/alembic.ini
-COPY ./alembic /photo-restoration/alembic
+WORKDIR /image-restoration
+COPY --from=requirements-stage /tmp/requirements.txt /image-restoration/requirements.txt
+COPY .env /image-restoration/.env
+RUN pip install --no-cache-dir --upgrade -r /image-restoration/requirements.txt
+COPY ./src /image-restoration/src
+COPY ./alembic.ini /image-restoration/alembic.ini
+COPY ./alembic /image-restoration/alembic
 CMD ["uvicorn", "src:init_app", "--host", "0.0.0.0", "--port", "80"]
