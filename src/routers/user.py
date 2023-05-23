@@ -1,8 +1,13 @@
+import os
+import aiofiles
+from ..security import hash_file_name
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..schemas.user import UserSchemaCreate, UserSchema, UserSchemaUpdate
+from ..schemas.image import ImageBase
 from ..services.user import create, update, delete, get_all, get_by_username
+from ..services.image import create as create_img
 from ..config import settings
 from ..db import get_db
 from ..dependencies import Auth, auth_checker
@@ -25,8 +30,7 @@ async def get_current_user(
 
 @users_router.post("", response_model=UserSchema, status_code=201)
 async def create_user(
-    user: UserSchemaCreate,
-    db: Annotated[AsyncSession, Depends(get_db)]
+    user: UserSchemaCreate, db: Annotated[AsyncSession, Depends(get_db)]
 ):
     new_user = await create(db, user)
     if not new_user:
@@ -99,3 +103,58 @@ async def delete_user(
     redis_conn.setex(authorize.jti, settings.AUTHJWT_COOKIE_MAX_AGE, "true")
     authorize.unset_jwt_cookies()
     return await delete(db, existed_user)
+
+
+@users_router.post("/upload_image")
+async def create_upload_image(
+    authorize: Annotated[Auth, Depends(auth_checker)],
+    files: list[UploadFile],
+    z: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    current_user = await authorize.get_current_user(db)
+    files_data = []
+    for file in files:
+        try:
+            filename = hash_file_name(file.filename)
+            file_ext = file.filename.split(".")[-1]
+            file_content = await file.read()
+            file_dir = f"/data/user_images/{current_user.id}"
+            file_url = f"/static/user_images/{current_user.id}/{filename}.{file_ext}"
+            file_location = os.path.join(file_dir, f"{filename}.{file_ext}")
+            os.makedirs(file_dir, exist_ok=True)
+            async with aiofiles.open(file_location, "wb+") as image_file:
+                file_data = {
+                    "name": file.filename,
+                    "size": file.size,
+                    "location": file_url,
+                    "user_id": current_user.id,
+                }
+                await image_file.write(file_content)
+                await create_img(db, file_data)
+            files_data.append(
+                {
+                    "filename": file.filename,
+                    "file_size": file.size,
+                    "file_location": file_url,
+                }
+            )
+        except Exception:
+            return {"detail": "Something went wrong"}
+        finally:
+            await file.close()
+    return {
+        "files_data": files_data,
+        "user": current_user.username,
+    }
+
+
+@users_router.get("/images/results", response_model=list[ImageBase])
+async def get_user_images(
+    authorize: Annotated[Auth, Depends(auth_checker)],
+    z: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    current_user = await authorize.get_current_user(db)
+    files_data = current_user.images
+    return files_data
