@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "photo-restoration"
+name = "image-restoration"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
@@ -26,6 +26,7 @@ psycopg = "^3.1.8"
 pre-commit = "^3.2.2"
 redis = "^4.5.4"
 python-multipart = "^0.0.6"
+aiofiles = "^23.1.0"
 
 
 [build-system]
