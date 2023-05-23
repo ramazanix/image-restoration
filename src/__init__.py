@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from src.config import settings
 from src.db import session_manager
 from src.redis import RedisClient
@@ -42,5 +43,6 @@ def init_app(init_db=True):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    server.mount("/static", StaticFiles(directory=settings.STATIC_PATH), name="static")
 
     return server
