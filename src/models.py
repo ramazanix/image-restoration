@@ -1,4 +1,14 @@
-from sqlalchemy import Column, String, Uuid, DateTime, ForeignKey, select, column, text
+from sqlalchemy import (
+    Column,
+    String,
+    Uuid,
+    DateTime,
+    ForeignKey,
+    select,
+    column,
+    text,
+    Integer,
+)
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from uuid import uuid4
@@ -23,6 +33,7 @@ class User(Base):
         .select_from(text("roles")),
     )
     role = relationship("Role", back_populates="users", lazy="joined")
+    images = relationship("Image", back_populates="user", lazy="selectin")
 
 
 class Role(Base):
@@ -34,3 +45,14 @@ class Role(Base):
     users = relationship(
         "User", back_populates="role", order_by="User.created_at", lazy="selectin"
     )
+
+
+class Image(Base):
+    __tablename__ = "images"
+
+    id = Column(Uuid, primary_key=True, default=uuid4)
+    name = Column(String, nullable=False)
+    size = Column(Integer, nullable=False)
+    location = Column(String, unique=True, nullable=False)
+    user_id = Column(Uuid, ForeignKey("users.id"), nullable=False)
+    user = relationship("User", back_populates="images", lazy="joined")
