@@ -24,7 +24,8 @@ services:
   app:
     build: .
     volumes:
-      - ./src:/photo-restoration/src
+      - ./src:/image-restoration/src
+      - static:/data
     ports:
       - '80:80'
     depends_on:
@@ -33,5 +34,6 @@ services:
 
 volumes:
   postgres_data:
+  static:
   cache:
     driver: local
