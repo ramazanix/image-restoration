@@ -14,7 +14,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 redis_conn = RedisClient().conn
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 @AuthJWT.token_in_denylist_loader
