@@ -32,9 +32,9 @@ def init_app(init_db=True):
         "http://localhost:3000",
     ]
 
-    server.include_router(auth_router)
-    server.include_router(users_router)
-    server.include_router(roles_router)
+    server.include_router(auth_router, prefix='/api')
+    server.include_router(users_router, prefix='/api')
+    server.include_router(roles_router, prefix='/api')
     server.add_exception_handler(AuthJWTException, auth_jwt_exception_handler)
     server.add_middleware(
         CORSMiddleware,
