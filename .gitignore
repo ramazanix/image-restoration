@@ -2,3 +2,4 @@
 .env
 diff.output
 __pycache__/
+neural_link/
