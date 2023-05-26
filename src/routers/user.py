@@ -1,13 +1,23 @@
+import asyncio
+import concurrent.futures
 import os
 import aiofiles
-from ..security import hash_file_name
+from ..security import hash_file_name, process_images
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    UploadFile,
+    BackgroundTasks,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..schemas.user import UserSchemaCreate, UserSchema, UserSchemaUpdate
 from ..schemas.image import ImageBase
 from ..services.user import create, update, delete, get_all, get_by_username
 from ..services.image import create as create_img
+from ..services.image import delete as delete_img
 from ..config import settings
 from ..db import get_db
 from ..dependencies import Auth, auth_checker
@@ -111,16 +121,19 @@ async def create_upload_image(
     files: list[UploadFile],
     z: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(get_db)],
+    background_tasks: BackgroundTasks,
 ):
     current_user = await authorize.get_current_user(db)
     files_data = []
+    file_dir = f"/tmp/input_images/{current_user.id}"
     for file in files:
         try:
             filename = hash_file_name(file.filename)
             file_ext = file.filename.split(".")[-1]
             file_content = await file.read()
-            file_dir = f"/data/user_images/{current_user.id}"
-            file_url = f"/static/user_images/{current_user.id}/{filename}.{file_ext}"
+            file_url = (
+                f"/static/user_images/{current_user.id}/final_output/{filename}.png"
+            )
             file_location = os.path.join(file_dir, f"{filename}.{file_ext}")
             os.makedirs(file_dir, exist_ok=True)
             async with aiofiles.open(file_location, "wb+") as image_file:
@@ -140,9 +153,14 @@ async def create_upload_image(
                 }
             )
         except Exception:
+            await delete_img(db, file_data)
             return {"detail": "Something went wrong"}
         finally:
             await file.close()
+
+    loop = asyncio.get_event_loop()
+    with concurrent.futures.ProcessPoolExecutor() as pool:
+        await loop.run_in_executor(pool, process_images, file_dir)
     return {
         "files_data": files_data,
         "user": current_user.username,
