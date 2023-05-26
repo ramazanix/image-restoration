@@ -25,7 +25,7 @@ services:
     build: .
     volumes:
       - ./src:/image-restoration/src
-      - ./neural_link:/data
+      - static:/data
     ports:
       - '80:80'
     depends_on:
