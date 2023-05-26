@@ -1,3 +1,4 @@
+import datetime
 import subprocess
 from passlib.context import CryptContext
 from hashlib import shake_256
@@ -15,12 +16,23 @@ def get_password_hash(raw_password: str) -> str:
 
 
 def hash_file_name(filename: str):
-    return shake_256(filename.encode()).hexdigest(8)
+    return shake_256(
+        (filename + datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S:%f")).encode()
+    ).hexdigest(8)
 
 
 def process_images(file_dir: str):
-    user_id = file_dir.split('/')[-1]
-    commands = ['python', 'run.py', '--input_folder', file_dir, '--output_folder',
-                f'/data/user_images/{user_id}', '--GPU', '-1', '--with_scratch']
-    proc = subprocess.Popen(commands, cwd='/image-restoration/neural_link')
+    user_id = file_dir.split("/")[-1]
+    commands = [
+        "python",
+        "run.py",
+        "--input_folder",
+        file_dir,
+        "--output_folder",
+        f"/data/user_images/{user_id}",
+        "--GPU",
+        "-1",
+        "--with_scratch",
+    ]
+    proc = subprocess.Popen(commands, cwd="/image-restoration/neural_link")
     proc.wait()
