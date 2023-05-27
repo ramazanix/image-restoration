@@ -59,12 +59,10 @@ async def refresh_access_token(
     return {"access_token": new_access_token}
 
 
-@auth_router.delete("/logout")
+@auth_router.delete("/logout", status_code=204)
 async def logout(
     authorize: Annotated[Auth, Depends(auth_checker)],
     z: Annotated[str, Depends(oauth2_scheme)],
 ):
     jti = authorize.jti
     redis_conn.setex(jti, settings.AUTHJWT_ACCESS_TOKEN_EXPIRES, "true")
-    authorize.unset_jwt_cookies()
-    return {"detail": "Tokens has been revoked"}
