@@ -2,6 +2,8 @@ import datetime
 import subprocess
 from passlib.context import CryptContext
 from hashlib import shake_256
+from pathlib import Path
+import shutil
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -36,3 +38,9 @@ def process_images(file_dir: str):
     ]
     proc = subprocess.Popen(commands, cwd="/image-restoration/neural_link")
     proc.wait()
+
+
+def clear_dir(dir: str) -> None:
+    dirpath = Path(dir)
+    if dirpath.exists() and dirpath.is_dir():
+        shutil.rmtree(dirpath)
