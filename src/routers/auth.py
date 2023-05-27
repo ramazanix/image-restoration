@@ -1,5 +1,4 @@
 from typing import Annotated
-from ..schemas.user import UserSchemaCreate
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..config import settings
