@@ -2,7 +2,7 @@ import asyncio
 import concurrent.futures
 import os
 import aiofiles
-from ..security import hash_file_name, process_images
+from ..security import hash_file_name, process_images, clear_dir
 from typing import Annotated
 from fastapi import (
     APIRouter,
@@ -23,6 +23,7 @@ from ..db import get_db
 from ..dependencies import Auth, auth_checker
 from ..redis import RedisClient
 from .auth import oauth2_scheme
+from fastapi.concurrency import run_in_threadpool
 
 
 users_router = APIRouter(prefix="/users", tags=["Users"])
@@ -126,14 +127,16 @@ async def create_upload_image(
     current_user = await authorize.get_current_user(db)
     files_data = []
     file_dir = f"/tmp/input_images/{current_user.id}"
+    clear_dir(file_dir)
     for file in files:
         try:
             filename = hash_file_name(file.filename)
             file_ext = file.filename.split(".")[-1]
             file_content = await file.read()
-            file_url = (
-                f"/static/user_images/{current_user.id}/final_output/{filename}.png"
-            )
+            if file_ext == "jpeg":
+                file_url = f"/static/user_images/{current_user.id}/final_output/{filename}..png"
+            else:
+                file_url = f"/static/user_images/{current_user.id}/final_output/{filename}.png"
             file_location = os.path.join(file_dir, f"{filename}.{file_ext}")
             os.makedirs(file_dir, exist_ok=True)
             async with aiofiles.open(file_location, "wb+") as image_file:
@@ -158,9 +161,7 @@ async def create_upload_image(
         finally:
             await file.close()
 
-    loop = asyncio.get_event_loop()
-    with concurrent.futures.ProcessPoolExecutor() as pool:
-        await loop.run_in_executor(pool, process_images, file_dir)
+    await run_in_threadpool(process_images, file_dir)
     return {
         "files_data": files_data,
         "user": current_user.username,
