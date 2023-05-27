@@ -111,8 +111,7 @@ async def delete_user(
     if not existed_user.id == current_user.id:
         raise HTTPException(status_code=405)
 
-    redis_conn.setex(authorize.jti, settings.AUTHJWT_COOKIE_MAX_AGE, "true")
-    authorize.unset_jwt_cookies()
+    redis_conn.setex(authorize.jti, settings.AUTHJWT_REFRESH_TOKEN_EXPIRES, "true")
     return await delete(db, existed_user)
 
 
