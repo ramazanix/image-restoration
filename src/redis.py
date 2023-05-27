@@ -12,7 +12,7 @@ class Singleton(type):
 
 class RedisClient(metaclass=Singleton):
     def __init__(self, host="localhost", password=None):
-        self.pool = redis.ConnectionPool(host=host, password=password)
+        self.pool = redis.ConnectionPool(host=host, password=password, decode_responses=True)
 
     @property
     def conn(self):
@@ -21,7 +21,7 @@ class RedisClient(metaclass=Singleton):
         return self._conn
 
     def get_connection(self):
-        self._conn = redis.Redis(connection_pool=self.pool, decode_responses=True)
+        self._conn = redis.Redis(connection_pool=self.pool)
 
     # For testing
     def clear(self):
