@@ -59,11 +59,14 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
 
+      - name: Create data folder
+        run: |
+          mkdir -p /data
+
       - name: Run tests
         run: |
           source .venv/bin/activate
           cat .env.dev >> .env
-          mkdir /data
           pytest tests/
         env:
           REDIS_HOST: localhost
