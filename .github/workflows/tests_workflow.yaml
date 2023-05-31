@@ -63,6 +63,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cat .env.dev >> .env
+          mkdir /data
           pytest tests/
         env:
           REDIS_HOST: localhost
