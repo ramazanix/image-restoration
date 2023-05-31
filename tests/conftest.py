@@ -13,6 +13,9 @@ from pytest_postgresql.janitor import DatabaseJanitor
 from src.enums import RoleEnum
 
 
+user_data = {"username": "username", "password": "password"}
+
+
 @pytest.fixture(autouse=True)
 def app():
     with ExitStack():
@@ -76,3 +79,20 @@ async def session_override(app, connection_test):
             yield session
 
     app.dependency_overrides[get_db] = get_db_override
+
+
+@pytest_asyncio.fixture
+async def create_user(client: AsyncClient):
+    await client.post("/api/users", json=user_data)
+
+
+@pytest_asyncio.fixture
+async def authorize(client: AsyncClient) -> dict[str, str]:
+    response = await client.post("/api/auth/login", data=user_data)
+    tokens = response.json()
+    return tokens
+
+
+@pytest_asyncio.fixture
+async def authorization_header(authorize):
+    return {"Authorization": f'Bearer {authorize["access_token"]}'}
