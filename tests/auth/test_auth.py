@@ -13,9 +13,7 @@ async def test_auth_not_existed_user(client: AsyncClient):
     """
     Trying to authenticate not existed user
     """
-    response = await client.post(
-        "/api/auth/login", data=user_data
-    )
+    response = await client.post("/api/auth/login", data=user_data)
     assert response.status_code == 401
     assert response.json().get("detail") == "Bad username or password"
 
